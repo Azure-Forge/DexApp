@@ -9,19 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DeskRouteImport } from './routes/desk'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileIndexRouteImport } from './routes/profile/index'
 import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as LoginOtpRouteImport } from './routes/login/otp'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoPingserverRouteImport } from './routes/demo/pingserver'
+import { Route as DashboardWorkplaceRouteImport } from './routes/dashboard/workplace'
+import { Route as DashboardAddRouteImport } from './routes/dashboard/add'
+import { Route as DashboardAktaCompanyIdRouteImport } from './routes/dashboard/akta/$companyId'
 
-const DeskRoute = DeskRouteImport.update({
-  id: '/desk',
-  path: '/desk',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -35,6 +33,11 @@ const ProfileIndexRoute = ProfileIndexRouteImport.update({
 const LoginIndexRoute = LoginIndexRouteImport.update({
   id: '/login/',
   path: '/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginOtpRoute = LoginOtpRouteImport.update({
@@ -52,84 +55,113 @@ const DemoPingserverRoute = DemoPingserverRouteImport.update({
   path: '/demo/pingserver',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardWorkplaceRoute = DashboardWorkplaceRouteImport.update({
+  id: '/dashboard/workplace',
+  path: '/dashboard/workplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardAddRoute = DashboardAddRouteImport.update({
+  id: '/dashboard/add',
+  path: '/dashboard/add',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardAktaCompanyIdRoute = DashboardAktaCompanyIdRouteImport.update({
+  id: '/dashboard/akta/$companyId',
+  path: '/dashboard/akta/$companyId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/desk': typeof DeskRoute
+  '/dashboard/add': typeof DashboardAddRoute
+  '/dashboard/workplace': typeof DashboardWorkplaceRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
+  '/dashboard/akta/$companyId': typeof DashboardAktaCompanyIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/desk': typeof DeskRoute
+  '/dashboard/add': typeof DashboardAddRoute
+  '/dashboard/workplace': typeof DashboardWorkplaceRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/login': typeof LoginIndexRoute
   '/profile': typeof ProfileIndexRoute
+  '/dashboard/akta/$companyId': typeof DashboardAktaCompanyIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/desk': typeof DeskRoute
+  '/dashboard/add': typeof DashboardAddRoute
+  '/dashboard/workplace': typeof DashboardWorkplaceRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/login/': typeof LoginIndexRoute
   '/profile/': typeof ProfileIndexRoute
+  '/dashboard/akta/$companyId': typeof DashboardAktaCompanyIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/desk'
+    | '/dashboard/add'
+    | '/dashboard/workplace'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
+    | '/dashboard'
     | '/login'
     | '/profile'
+    | '/dashboard/akta/$companyId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/desk'
+    | '/dashboard/add'
+    | '/dashboard/workplace'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
+    | '/dashboard'
     | '/login'
     | '/profile'
+    | '/dashboard/akta/$companyId'
   id:
     | '__root__'
     | '/'
-    | '/desk'
+    | '/dashboard/add'
+    | '/dashboard/workplace'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
+    | '/dashboard/'
     | '/login/'
     | '/profile/'
+    | '/dashboard/akta/$companyId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DeskRoute: typeof DeskRoute
+  DashboardAddRoute: typeof DashboardAddRoute
+  DashboardWorkplaceRoute: typeof DashboardWorkplaceRoute
   DemoPingserverRoute: typeof DemoPingserverRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   LoginOtpRoute: typeof LoginOtpRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
   LoginIndexRoute: typeof LoginIndexRoute
   ProfileIndexRoute: typeof ProfileIndexRoute
+  DashboardAktaCompanyIdRoute: typeof DashboardAktaCompanyIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/desk': {
-      id: '/desk'
-      path: '/desk'
-      fullPath: '/desk'
-      preLoaderRoute: typeof DeskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -149,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login/otp': {
@@ -172,17 +211,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoPingserverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/workplace': {
+      id: '/dashboard/workplace'
+      path: '/dashboard/workplace'
+      fullPath: '/dashboard/workplace'
+      preLoaderRoute: typeof DashboardWorkplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/add': {
+      id: '/dashboard/add'
+      path: '/dashboard/add'
+      fullPath: '/dashboard/add'
+      preLoaderRoute: typeof DashboardAddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/akta/$companyId': {
+      id: '/dashboard/akta/$companyId'
+      path: '/dashboard/akta/$companyId'
+      fullPath: '/dashboard/akta/$companyId'
+      preLoaderRoute: typeof DashboardAktaCompanyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DeskRoute: DeskRoute,
+  DashboardAddRoute: DashboardAddRoute,
+  DashboardWorkplaceRoute: DashboardWorkplaceRoute,
   DemoPingserverRoute: DemoPingserverRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   LoginOtpRoute: LoginOtpRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
   LoginIndexRoute: LoginIndexRoute,
   ProfileIndexRoute: ProfileIndexRoute,
+  DashboardAktaCompanyIdRoute: DashboardAktaCompanyIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -41,6 +41,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       <HeadContent />
       {/*<Header />*/}
       <div className=''>
+        
         <Outlet />
       </div>
       {/* Devtools configuration omitted for brevity */}
