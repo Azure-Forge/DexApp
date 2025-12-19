@@ -16,7 +16,7 @@ export function HomePage(){
             <Link to="/login">Get Started</Link>
           </Button>
           <Button variant={"outline"} className="py-5" >
-            <Link to="/">Learn More</Link>
+            <Link to="/dashboard">Dashboard</Link>
           </Button>
         </div>
       </main>

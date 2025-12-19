@@ -1,11 +1,54 @@
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 
 // --- DUMMY/PLACEHOLDER FORM COMPONENTS ---
 // Di implementasi nyata, komponen-komponen ini akan berisi logika form yang sebenarnya.
 // Berdasarkan struktur database Anda, ini adalah jenis-jenis perusahaan yang didukung.
-function PTForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian PT (Pemegang Saham, Direksi, Komisaris, dll.)</div> }
+// Inside your NewCompanyAndAktaForm
+function PTForm() {
+  return (
+    <div className="space-y-4 mt-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs font-bold uppercase">Nama Perusahaan</label>
+          <Input placeholder="Contoh: Maju Jaya" />
+        </div>
+        <div>
+          <label className="text-xs font-bold uppercase">NPWP</label>
+          <Input placeholder="00.000.000.0-000.000" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {/* Dropdowns for your new statuses */}
+        <select className="border p-2 rounded text-sm">
+          <option>STATUS KLIEN: AKTIF</option>
+          <option>STATUS KLIEN: NON_AKTIF</option>
+        </select>
+        <select className="border p-2 rounded text-sm">
+          <option>STATUS NPWP: AKTIF</option>
+          <option>STATUS NPWP: NON_EFEKTIF</option>
+        </select>
+        <select className="border p-2 rounded text-sm">
+          <option>PAJAK: PKP</option>
+          <option>PAJAK: NON_PKP</option>
+        </select>
+      </div>
+
+      <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+        <h4 className="text-sm font-bold">Data Akta Pendirian (Google Drive Links)</h4>
+        <Input placeholder="Judul Akta" />
+        <Input placeholder="Nama Notaris" />
+        <div className="grid grid-cols-2 gap-2">
+          <Input placeholder="Link PDF Drive (https://...)" className="bg-white" />
+          <Input placeholder="Link Excel Drive (https://...)" className="bg-white" />
+        </div>
+      </div>
+    </div>
+  )
+}
 function CVForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian CV (Direktur, Komanditer, Investor, dll.)</div> }
 function FIRMAForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian FIRMA</div> }
 function YAYASANForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian YAYASAN (Pembina, Pengurus, Pengawas)</div> }

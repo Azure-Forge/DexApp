@@ -1,133 +1,124 @@
 // lib/data.ts
 
 export type CompanyType = "PT" | "CV" | "FIRMA" | "YAYASAN";
+export type NPWPStatus = "AKTIF" | "NON_EFEKTIF";
+export type ClientStatus = "AKTIF" | "NON_AKTIF";
+export type TaxStatus = "PKP" | "NON_PKP";
 
-// Tipe Akta baru dengan field tambahan untuk simulasi data yang lebih lengkap
 export type Akta = {
-  id_akta: string; // ID unik untuk mapping di component
+  id_akta: string;
   akta_title: string;
-  akta_date: string; // ISO date string
-  version: number;
-  notary_name: string; // Tambahan untuk detail
+  akta_date: string; 
+  notary_name: string;
+  pdf_link: string;   
+  excel_link: string; 
 };
 
-// Tipe utama untuk Entri Perusahaan
 export interface CompanyEntry {
   id_company: string;
   name_company: string;
   npwp: string;
   type: CompanyType;
   current_domicile: string;
-  // 🛑 FIXED: Mengganti akta tunggal menjadi array sejarah akta
+  status_npwp: NPWPStatus;
+  status_klien: ClientStatus;
+  is_pkp: TaxStatus;
   akta_history: Akta[]; 
 }
 
-const COMPANY_TYPES: CompanyType[] = ["PT", "CV", "FIRMA", "YAYASAN"];
-const DOMICILE_OPTIONS = ["Jakarta", "Surabaya", "Bandung", "Medan", "Makassar", "Semarang", "Yogyakarta"];
-const NOTARY_NAMES = ["Budi Santoso, S.H.", "Siti Aminah, S.H., M.Kn.", "Andi Wijaya, S.H.", "Dewi Sartika, S.H."];
+// --- HELPER ARRAYS FOR RANDOMIZATION ---
 
-function getRandomItem<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+const NOTARIES = ["Budi Santoso, S.H.", "Siti Aminah, S.H., M.Kn.", "Andi Wijaya, S.H.", "Dewi Sartika, S.H.", "Hendra Yusuf, S.H."];
+const CITIES = ["Jakarta Selatan", "Surabaya", "Bandung", "Medan", "Semarang", "Tangerang", "Bekasi"];
+const COMPANY_NAMES = ["Maju Bersama", "Sinergi Tech", "Nusantara Jaya", "Global Solusi", "Lestari Abadi", "Karya Mandiri", "Pilar Utama"];
 
-// 🛑 NEW FUNCTION: Helper untuk membuat histori Akta dummy
+const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+// --- DUMMY DATA GENERATION ---
+
 function generateDummyHistory(companyId: number): Akta[] {
-  const count = Math.floor(Math.random() * 5) + 1; // 1 to 5 items
+  // Generate 1 to 5 items of history
+  const historyCount = Math.floor(Math.random() * 5) + 1;
   const history: Akta[] = [];
 
-  for (let i = 1; i <= count; i++) {
-    // Logic: 1st is Pendirian, rest are Perubahan
+  for (let i = 1; i <= historyCount; i++) {
+    // Logic: Version 1 is always Pendirian, higher versions are Perubahan
     const title = i === 1 
-      ? `Akta Pendirian No. ${Math.floor(Math.random() * 100)}` 
-      : `Akta Perubahan Anggaran Dasar No. ${Math.floor(Math.random() * 100)} (V${i})`;
+      ? `Akta Pendirian No. ${Math.floor(Math.random() * 50) + 1}` 
+      : `Akta Perubahan No. ${Math.floor(Math.random() * 100) + 1} (Perubahan Anggaran Dasar)`;
     
-    // Dates get progressively more recent based on version/iteration
-    const year = 2020 - (count - i); 
+    // Dates get progressively newer
+    const year = 2018 + i; 
     const month = Math.floor(Math.random() * 12);
     const day = Math.floor(Math.random() * 28) + 1;
-    
+
     history.push({
       id_akta: `akta-${companyId}-${i}`,
       akta_title: title,
       akta_date: new Date(year, month, day).toISOString(),
-      version: i,
-      notary_name: getRandomItem(NOTARY_NAMES)
+      notary_name: getRandom(NOTARIES),
+      pdf_link: "https://drive.google.com/sample-pdf",
+      excel_link: "https://docs.google.com/sample-excel"
     });
   }
-  
-  // Sort descending by date (Newest first)
+
+  // Return sorted by date DESC (Newest at index 0)
   return history.sort((a, b) => new Date(b.akta_date).getTime() - new Date(a.akta_date).getTime());
 }
 
-function generateDummyCompany(id: number): CompanyEntry {
-  const type = getRandomItem(COMPANY_TYPES);
-  const name = `Perusahaan Hebat ${type} ${id}`;
-  const npwp = `0${(id % 10) + 1}.${(id * 7) % 100}.${(id * 3) % 100}.${id % 9}-000.000`;
-  const domicile = getRandomItem(DOMICILE_OPTIONS);
+const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 50 }, (_, i) => {
+  const types: CompanyType[] = ["PT", "CV", "FIRMA", "YAYASAN"];
+  const idNum = i + 1;
   
   return {
-    id_company: `comp-${id}`,
-    name_company: name,
-    npwp: npwp,
-    type: type,
-    current_domicile: domicile,
-    // 🛑 FIXED: Menggunakan array history
-    akta_history: generateDummyHistory(id), 
+    id_company: `comp-${idNum}`,
+    name_company: `${getRandom(COMPANY_NAMES)} ${idNum}`,
+    npwp: `${Math.floor(Math.random() * 90) + 10}.${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 900) + 100}.${Math.random().toString().slice(2, 3)}-${Math.floor(Math.random() * 900) + 100}.000`,
+    type: getRandom(types),
+    current_domicile: getRandom(CITIES),
+    status_npwp: Math.random() > 0.2 ? "AKTIF" : "NON_EFEKTIF",
+    status_klien: Math.random() > 0.1 ? "AKTIF" : "NON_AKTIF",
+    is_pkp: Math.random() > 0.5 ? "PKP" : "NON_PKP",
+    akta_history: generateDummyHistory(idNum),
   };
-}
+});
 
-// Buat 500 data dummy
-const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 500 }, (_, i) => generateDummyCompany(i + 1));
+// --- EXPORTED FUNCTIONS ---
 
-// Fungsi simulasi fetch data dengan filtering dan pagination
 export async function fetchCompanyEntries(
   page: number, 
   pageSize: number = 12, 
   companyType: CompanyType | "ALL" = "ALL", 
   searchTerm: string = ""
 ): Promise<CompanyEntry[]> {
-  // Simulasikan delay jaringan
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 200));
+  let filtered = [...DUMMY_DATA];
 
-  let filteredData = DUMMY_DATA;
-
-  // 1. Filter berdasarkan Jenis Perusahaan
   if (companyType !== "ALL") {
-    filteredData = filteredData.filter(company => company.type === companyType);
+    filtered = filtered.filter(c => c.type === companyType);
   }
 
-  // 2. Filter berdasarkan Search Term (Nama, NPWP, Akta Title, Domisili)
   if (searchTerm) {
-    const lowerCaseSearch = searchTerm.toLowerCase();
-    filteredData = filteredData.filter(company => 
-      company.name_company.toLowerCase().includes(lowerCaseSearch) ||
-      company.npwp.replace(/[\.-]/g, '').includes(searchTerm.replace(/[\.-]/g, '')) || 
-      company.current_domicile.toLowerCase().includes(lowerCaseSearch) ||
-      // 🛑 FIXED: Melakukan pencarian di dalam array akta_history
-      company.akta_history.some(akta => akta.akta_title.toLowerCase().includes(lowerCaseSearch))
+    const s = searchTerm.toLowerCase();
+    filtered = filtered.filter(c => 
+      c.name_company.toLowerCase().includes(s) || 
+      c.npwp.includes(s)
     );
   }
 
-  // 3. Terapkan Pagination
-  const from = page * pageSize;
-  const to = from + pageSize;
-  const paginatedData = filteredData.slice(from, to);
-
-  return paginatedData;
+  return filtered.slice(page * pageSize, (page + 1) * pageSize);
 }
 
-// Cari company berdasarkan ID
-export async function fetchCompanyById(id_company: string) {
-  await new Promise(resolve => setTimeout(resolve, 200)); // simulate network
+export async function fetchCompanyById(id_company: string): Promise<CompanyEntry | null> {
+  await new Promise(resolve => setTimeout(resolve, 150));
   const found = DUMMY_DATA.find(c => c.id_company === id_company);
   return found ?? null;
 }
 
-// Tambah entri perusahaan baru ke data dummy (simulasi create)
 export async function createCompanyEntry(newEntry: Omit<CompanyEntry, 'id_company'>) {
   await new Promise(resolve => setTimeout(resolve, 300));
   const id = `comp-${DUMMY_DATA.length + 1}`;
   const entry: CompanyEntry = { id_company: id, ...newEntry };
-  DUMMY_DATA.unshift(entry); // tambahkan di awal
+  DUMMY_DATA.unshift(entry);
   return entry;
 }

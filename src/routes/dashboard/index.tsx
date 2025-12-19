@@ -42,36 +42,53 @@ function AddEntriesCard() {
 
 // Komponen untuk menampilkan data per entry
 function EntryCard({ entry }: { entry: CompanyEntry }) {
-  const { name_company, npwp, type, akta_history } = entry;
-
-  // 🛑 FIX: Ambil Akta terbaru dari akta_history
-  // Asumsi: akta_history adalah array dan entri terbaru berada di index 0
-  const latestAkta = akta_history && akta_history.length > 0 ? akta_history[0] : null;
+  const latestAkta = entry.akta_history?.[0];
 
   return (
-    <Link to = "/dashboard/akta/$companyId" params={{ companyId: entry.id_company }}>
-    <Card className="relative p-5 rounded-xl border min-h-[200px] shadow-sm flex flex-col justify-between hover:shadow-lg transition cursor-pointer">
-        <div className="text-xs text-muted-foreground mb-2">NPWP: {npwp}</div>
-
-        <h3 className="text-xl font-extrabold leading-tight mb-2 truncate">
-          {type} {name_company}
-        </h3>
-
-        {/* 🛑 FIX: Gunakan latestAkta */}
-        {latestAkta ? (
-          <div className="mt-auto">
-            <div className="flex flex-col text-sm text-muted-foreground">
-              <span className="font-semibold text-blue-500">{latestAkta.akta_title ?? "-"}</span>
-            </div>
-            <div className='text-xs text-muted-foreground mt-2'>
-              Tgl. Akta: {new Date(latestAkta.akta_date).toLocaleDateString()}
+    <Link to="/dashboard/akta/$companyId" params={{ companyId: entry.id_company }}>
+      <Card className="relative p-5 rounded-xl border min-h-[200px] shadow-sm flex flex-col justify-between hover:shadow-lg transition cursor-pointer">
+        <div>
+          {/* Top Row: NPWP and PKP Tag */}
+          <div className="flex justify-between items-start mb-2">
+            <div className="text-[10px] font-mono text-muted-foreground uppercase">NPWP: {entry.npwp}</div>
+            <div className={`text-[10px] font-bold px-2 py-0.5 rounded ${entry.is_pkp === 'PKP' ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+              {entry.is_pkp}
             </div>
           </div>
-        ) : (
-          <div className="text-sm text-neutral-400 mt-auto">Belum ada Akta.</div>
-        )}
+
+          <h3 className="text-lg font-extrabold leading-tight mb-3">
+            {entry.type} {entry.name_company}
+          </h3>
+
+          {/* Status Indicators */}
+          <div className="flex gap-2 mb-4">
+             <div className={`text-[10px] px-2 py-1 rounded border ${entry.status_klien === 'AKTIF' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+               KLIEN: {entry.status_klien}
+             </div>
+             <div className={`text-[10px] px-2 py-1 rounded border ${entry.status_npwp === 'AKTIF' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
+               NPWP: {entry.status_npwp}
+             </div>
+          </div>
+        </div>
+
+        {/* Bottom Section: Akta Info & Links */}
+        <div className="mt-auto pt-3 border-t border-dashed">
+          <div className="text-[11px] font-bold text-blue-600 truncate mb-1">
+            {latestAkta?.akta_title ?? "Belum ada Akta"}
+          </div>
+          <div className="flex justify-between items-center">
+             <div className="text-[10px] text-muted-foreground italic">
+                {latestAkta ? new Date(latestAkta.akta_date).toLocaleDateString('id-ID') : '-'}
+             </div>
+             <div className="flex gap-2">
+                {/* Visual indicators that Drive links exist */}
+                <div className={`w-2 h-2 rounded-full ${latestAkta?.pdf_link ? 'bg-red-400' : 'bg-slate-200'}`} title="PDF Available" />
+                <div className={`w-2 h-2 rounded-full ${latestAkta?.excel_link ? 'bg-green-400' : 'bg-slate-200'}`} title="Excel Available" />
+             </div>
+          </div>
+        </div>
       </Card>
-      </Link>
+    </Link>
   );
 }
 
