@@ -42,20 +42,26 @@ const NOTES = [
 
 const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
+/**
+ * Generates NPWP in 4x4 format: 0000-0000-0000-0000
+ */
+const generateNPWP = () => {
+  const segment = () => Math.floor(1000 + Math.random() * 9000).toString();
+  return `${segment()}.${segment()}.${segment()}.${segment()}`;
+};
+
 // --- DUMMY DATA GENERATION ---
 
 function generateDummyHistory(companyId: number): Akta[] {
-  // Generate 1 to 5 items of history
   const historyCount = Math.floor(Math.random() * 5) + 1;
   const history: Akta[] = [];
 
   for (let i = 1; i <= historyCount; i++) {
-    // Logic: Version 1 is always Pendirian, higher versions are Perubahan
     const title = i === 1 
       ? `Akta Pendirian No. ${Math.floor(Math.random() * 50) + 1}` 
       : `Akta Perubahan No. ${Math.floor(Math.random() * 100) + 1} (Perubahan Anggaran Dasar)`;
     
-    // Dates get progressively newer
+    // Dates get progressively newer (Start from 2018 + version)
     const year = 2018 + i; 
     const month = Math.floor(Math.random() * 12);
     const day = Math.floor(Math.random() * 28) + 1;
@@ -67,11 +73,11 @@ function generateDummyHistory(companyId: number): Akta[] {
       notary_name: getRandom(NOTARIES),
       pdf_link: "https://drive.google.com/sample-pdf",
       excel_link: "https://docs.google.com/sample-excel",
-      keterangan: getRandom(NOTES) // 📝 Random Lorem/Notes
+      keterangan: getRandom(NOTES)
     });
   }
 
-  // Return sorted by date DESC (Newest at index 0)
+  // Return sorted by date DESC (Newest first)
   return history.sort((a, b) => new Date(b.akta_date).getTime() - new Date(a.akta_date).getTime());
 }
 
@@ -82,7 +88,7 @@ const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 50 }, (_, i) => {
   return {
     id_company: `comp-${idNum}`,
     name_company: `${getRandom(COMPANY_NAMES)} ${idNum}`,
-    npwp: `${Math.floor(Math.random() * 90) + 10}.${Math.floor(Math.random() * 900) + 100}.${Math.floor(Math.random() * 900) + 100}.${Math.random().toString().slice(2, 3)}-${Math.floor(Math.random() * 900) + 100}.000`,
+    npwp: generateNPWP(), // Fixed to 4x4 format
     type: getRandom(types),
     current_domicile: getRandom(CITIES),
     status_npwp: Math.random() > 0.2 ? "AKTIF" : "NON_EFEKTIF",
@@ -94,19 +100,30 @@ const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 50 }, (_, i) => {
 
 // --- EXPORTED FUNCTIONS ---
 
+/**
+ * Enhanced fetch with Advanced Filtering
+ */
 export async function fetchCompanyEntries(
   page: number, 
   pageSize: number = 12, 
   companyType: CompanyType | "ALL" = "ALL", 
-  searchTerm: string = ""
+  searchTerm: string = "",
+  statusKlien: ClientStatus | "ALL" = "ALL",
+  statusNPWP: NPWPStatus | "ALL" = "ALL",
+  taxStatus: TaxStatus | "ALL" = "ALL"
 ): Promise<CompanyEntry[]> {
-  await new Promise(resolve => setTimeout(resolve, 200));
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+
   let filtered = [...DUMMY_DATA];
 
-  if (companyType !== "ALL") {
-    filtered = filtered.filter(c => c.type === companyType);
-  }
+  // 1. Filter by Types and Statuses
+  if (companyType !== "ALL") filtered = filtered.filter(c => c.type === companyType);
+  if (statusKlien !== "ALL") filtered = filtered.filter(c => c.status_klien === statusKlien);
+  if (statusNPWP !== "ALL") filtered = filtered.filter(c => c.status_npwp === statusNPWP);
+  if (taxStatus !== "ALL") filtered = filtered.filter(c => c.is_pkp === taxStatus);
 
+  // 2. Filter by Search Term (Name or NPWP)
   if (searchTerm) {
     const s = searchTerm.toLowerCase();
     filtered = filtered.filter(c => 
@@ -115,7 +132,10 @@ export async function fetchCompanyEntries(
     );
   }
 
-  return filtered.slice(page * pageSize, (page + 1) * pageSize);
+  // 3. Apply Pagination
+  const from = page * pageSize;
+  const to = from + pageSize;
+  return filtered.slice(from, to);
 }
 
 export async function fetchCompanyById(id_company: string): Promise<CompanyEntry | null> {
@@ -128,6 +148,6 @@ export async function createCompanyEntry(newEntry: Omit<CompanyEntry, 'id_compan
   await new Promise(resolve => setTimeout(resolve, 300));
   const id = `comp-${DUMMY_DATA.length + 1}`;
   const entry: CompanyEntry = { id_company: id, ...newEntry };
-  DUMMY_DATA.unshift(entry);
+  DUMMY_DATA.unshift(entry); // Add to the beginning of list
   return entry;
 }

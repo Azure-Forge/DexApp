@@ -1,191 +1,338 @@
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+// routes/dashboard/add.tsx
+import React, { useState } from 'react';
+import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { 
+  PlusCircle, 
+  ArrowLeft, 
+  FileText, 
+  Table as TableIcon, 
+  Search, 
+  Building2, 
+  CheckCircle2,
+  ExternalLink 
+} from 'lucide-react';
 
-// --- DUMMY/PLACEHOLDER FORM COMPONENTS ---
-// Di implementasi nyata, komponen-komponen ini akan berisi logika form yang sebenarnya.
-// Berdasarkan struktur database Anda, ini adalah jenis-jenis perusahaan yang didukung.
-// Inside your NewCompanyAndAktaForm
-function PTForm() {
+// UI Components (shadcn/ui or similar)
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+
+// Data Logic
+import { 
+  createCompanyEntry, 
+  fetchCompanyEntries, 
+  type CompanyEntry, 
+  type CompanyType, 
+  type NPWPStatus, 
+  type ClientStatus, 
+  type TaxStatus 
+} from '../../lib/data';
+
+const COMPANY_TYPES: CompanyType[] = ["PT", "CV", "FIRMA", "YAYASAN"];
+
+// --- SHARED SUB-COMPONENTS ---
+
+/**
+ * Shared fields for Company Metadata
+ */
+function CompanyMetadataFields({ selectedType }: { selectedType: string }) {
   return (
-    <div className="space-y-4 mt-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-bold uppercase">Nama Perusahaan</label>
-          <Input placeholder="Contoh: Maju Jaya" />
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">Nama {selectedType}</label>
+          <Input name="name_company" placeholder={`Contoh: ${selectedType} Maju Jaya`} required />
         </div>
-        <div>
-          <label className="text-xs font-bold uppercase">NPWP</label>
-          <Input placeholder="00.000.000.0-000.000" />
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">NPWP (Format 0000.0000.0000.0000)</label>
+          <Input name="npwp" placeholder="0000.0000.0000.0000" required />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        {/* Dropdowns for your new statuses */}
-        <select className="border p-2 rounded text-sm">
-          <option>STATUS KLIEN: AKTIF</option>
-          <option>STATUS KLIEN: NON_AKTIF</option>
-        </select>
-        <select className="border p-2 rounded text-sm">
-          <option>STATUS NPWP: AKTIF</option>
-          <option>STATUS NPWP: NON_EFEKTIF</option>
-        </select>
-        <select className="border p-2 rounded text-sm">
-          <option>PAJAK: PKP</option>
-          <option>PAJAK: NON_PKP</option>
-        </select>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">Status Klien</label>
+          <Select name="status_klien" defaultValue="AKTIF">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AKTIF">AKTIF</SelectItem>
+              <SelectItem value="NON_AKTIF">NON AKTIF</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">Status NPWP</label>
+          <Select name="status_npwp" defaultValue="AKTIF">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="AKTIF">AKTIF</SelectItem>
+              <SelectItem value="NON_EFEKTIF">NON EFEKTIF</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">Pajak (PKP/Non)</label>
+          <Select name="is_pkp" defaultValue="NON_PKP">
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="PKP">PKP</SelectItem>
+              <SelectItem value="NON_PKP">NON PKP</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+          <label className="text-xs font-bold uppercase text-muted-foreground">Domisili (Kota/Kabupaten)</label>
+          <Input name="current_domicile" placeholder="Contoh: Jakarta Selatan" required />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Shared fields for Akta Documents
+ */
+function AktaFields({ isPendirian = true }: { isPendirian?: boolean }) {
+  return (
+    <div className="p-6 bg-blue-50/50 rounded-xl border border-blue-100 space-y-4">
+      <h3 className="text-sm font-bold flex items-center gap-2 text-blue-800">
+        <FileText className="w-4 h-4" /> 
+        {isPendirian ? "DETAIL AKTA PENDIRIAN" : "DETAIL AKTA PERUBAHAN"}
+      </h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input name="akta_title" placeholder="Judul Akta (Contoh: Akta No. 05)" required className="bg-white" />
+        <Input name="notary_name" placeholder="Nama Lengkap Notaris" required className="bg-white" />
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-1">
+           <label className="text-[10px] font-bold text-blue-600 ml-1 uppercase">Tanggal Akta</label>
+           <Input name="akta_date" type="date" required className="bg-white" />
+        </div>
+        <div className="space-y-1">
+           <label className="text-[10px] font-bold text-blue-600 ml-1 uppercase">Keterangan Singkat</label>
+           <Input name="keterangan" placeholder="Catatan/rekap singkat isi akta..." className="bg-white" />
+        </div>
       </div>
 
-      <div className="p-4 bg-blue-50 rounded-lg space-y-3">
-        <h4 className="text-sm font-bold">Data Akta Pendirian (Google Drive Links)</h4>
-        <Input placeholder="Judul Akta" />
-        <Input placeholder="Nama Notaris" />
-        <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Link PDF Drive (https://...)" className="bg-white" />
-          <Input placeholder="Link Excel Drive (https://...)" className="bg-white" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-red-600 ml-1 uppercase">Link PDF (Google Drive)</label>
+          <Input name="pdf_link" placeholder="https://drive.google.com/..." className="bg-white border-red-100" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-green-600 ml-1 uppercase">Link Excel Rekap (Google Drive)</label>
+          <Input name="excel_link" placeholder="https://docs.google.com/..." className="bg-white border-green-100" />
         </div>
       </div>
     </div>
-  )
+  );
 }
-function CVForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian CV (Direktur, Komanditer, Investor, dll.)</div> }
-function FIRMAForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian FIRMA</div> }
-function YAYASANForm() { return <div className="p-4 border rounded mt-4 bg-gray-50 dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300">Formulir Lengkap Akta Pendirian YAYASAN (Pembina, Pengurus, Pengawas)</div> }
 
-const COMPANY_TYPES = ["PT", "CV", "FIRMA", "YAYASAN"];
-// --- END DUMMY COMPONENTS ---
+// --- MAIN FORMS ---
 
-// Komponen untuk alur "TAMBAH PERUSAHAAN BARU" (Akta Pendirian)
-function NewCompanyAndAktaForm({ onBack }: { onBack: () => void }) {
-    // State untuk memilih jenis perusahaan (PT, CV, dll.)
-    const [selectedType, setSelectedType] = useState("PT");
-    
+function NewCompanyForm({ onBack }: { onBack: () => void }) {
+    const router = useRouter();
+    const [selectedType, setSelectedType] = useState<CompanyType>("PT");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+        const fd = new FormData(e.currentTarget);
+        
+        const payload: Omit<CompanyEntry, 'id_company'> = {
+            name_company: fd.get('name_company') as string,
+            npwp: fd.get('npwp') as string,
+            type: selectedType,
+            current_domicile: fd.get('current_domicile') as string,
+            status_klien: fd.get('status_klien') as ClientStatus,
+            status_npwp: fd.get('status_npwp') as NPWPStatus,
+            is_pkp: fd.get('is_pkp') as TaxStatus,
+            akta_history: [{
+                id_akta: 'pendirian-initial',
+                akta_title: fd.get('akta_title') as string,
+                akta_date: fd.get('akta_date') as string,
+                notary_name: fd.get('notary_name') as string,
+                pdf_link: fd.get('pdf_link') as string,
+                excel_link: fd.get('excel_link') as string,
+                keterangan: fd.get('keterangan') as string,
+            }]
+        };
+
+        await createCompanyEntry(payload);
+        router.navigate({ to: '/dashboard' });
+    };
+
     return (
-        <div className="w-full max-w-4xl p-6 bg-card text-card-foreground rounded-xl shadow-xl space-y-4">
-            <Button variant="ghost" onClick={onBack} className="mb-4 -ml-4 font-semibold text-blue-500 hover:text-blue-600">
-                &larr; Kembali ke Pilihan
+        <Card className="w-full max-w-4xl p-8 shadow-2xl space-y-8 animate-in fade-in zoom-in duration-300">
+            <Button variant="ghost" onClick={onBack} className="text-blue-500 hover:bg-blue-50 -ml-4">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Pilihan
             </Button>
             
-            <h1 className="text-2xl font-bold text-center mb-6">Tambahkan Akta Pendirian Perusahaan Baru</h1>
-            
-            {/* 1. Seleksi Tipe Perusahaan */}
-            <div className="flex flex-wrap items-center gap-3 p-4 border border-border rounded-lg bg-muted/20">
-                <span className="font-semibold text-sm mr-2 self-center">Pilih Jenis Perusahaan:</span>
+            <div className="text-center">
+                <h1 className="text-3xl font-black">Registrasi Badan Hukum Baru</h1>
+                <p className="text-muted-foreground mt-2">Mendaftarkan data perusahaan baru beserta akta pendiriannya.</p>
+            </div>
+
+            <div className="flex justify-center gap-3">
                 {COMPANY_TYPES.map((type) => (
                     <Button
                         key={type}
+                        type="button"
                         onClick={() => setSelectedType(type)}
                         variant={selectedType === type ? "default" : "outline"}
-                        className="w-24 shrink-0"
+                        className="w-24 font-bold shadow-sm"
                     >
                         {type}
                     </Button>
                 ))}
             </div>
 
-            {/* 2. Render Formulir berdasarkan Tipe */}
-            <h2 className="text-xl font-semibold pt-4">Formulir Akta Pendirian {selectedType}</h2>
-            <div>
-                {selectedType === "PT" && <PTForm />}
-                {selectedType === "CV" && <CVForm />}
-                {selectedType === "FIRMA" && <FIRMAForm />}
-                {selectedType === "YAYASAN" && <YAYASANForm />}
-            </div>
-            
-            <Button className="w-full mt-6 h-10">SIMPAN AKTA PENDIRIAN</Button>
-        </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+                <CompanyMetadataFields selectedType={selectedType} />
+                <hr className="border-dashed" />
+                <AktaFields isPendirian={true} />
+                
+                <Button disabled={loading} className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-100">
+                    {loading ? "Menyimpan Data..." : "SIMPAN PERUSAHAAN & AKTA PENDIRIAN"}
+                </Button>
+            </form>
+        </Card>
     );
 }
 
-// Komponen untuk alur "TAMBAH AKTA PERUBAHAN" (Revisi Akta)
-function NewAktaForExistingCompanyForm({ onBack }: { onBack: () => void }) {
+function ExistingCompanyAktaForm({ onBack }: { onBack: () => void }) {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [results, setResults] = useState<CompanyEntry[]>([]);
+    const [selectedCompany, setSelectedCompany] = useState<CompanyEntry | null>(null);
+
+    const handleSearch = async () => {
+        if(!searchQuery) return;
+        const data = await fetchCompanyEntries(0, 5, "ALL", searchQuery);
+        setResults(data);
+    };
+
     return (
-        <div className="w-full max-w-4xl p-6 bg-card text-card-foreground rounded-xl shadow-xl space-y-4">
-            <Button variant="ghost" onClick={onBack} className="mb-4 -ml-4 font-semibold text-blue-500 hover:text-blue-600">
-                &larr; Kembali ke Pilihan
+        <Card className="w-full max-w-4xl p-8 shadow-2xl space-y-8 border-t-4 border-t-green-600 animate-in fade-in zoom-in duration-300">
+            <Button variant="ghost" onClick={onBack} className="text-green-600 hover:bg-green-50 -ml-4">
+                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Pilihan
             </Button>
 
-            <h1 className="text-2xl font-bold text-center mb-6">Tambahkan Akta Perubahan (Revisi) untuk Perusahaan Eksisting</h1>
-            
-            <div className="p-6 border border-amber-300 bg-amber-50 dark:bg-amber-950 rounded-lg space-y-4">
-                <p className="font-semibold text-lg text-amber-700 dark:text-amber-300">Fitur: Form Akta Perubahan</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Di sini akan ada:
-                    <ul className="list-disc list-inside ml-4 mt-2">
-                        <li>Komponen *Search Bar* untuk mencari Perusahaan yang sudah ada (berdasarkan NPWP, Nama Perusahaan).</li>
-                        <li>Setelah Perusahaan dipilih, ditampilkan detail Akta terakhir.</li>
-                        <li>Formulir untuk mengisi data Akta Perubahan baru (Nomor, Tanggal, Jenis Perubahan).</li>
-                    </ul>
-                </p>
-                <Button variant="secondary" className="w-full mt-4">
-                    [Placeholder] Cari & Pilih Perusahaan
-                </Button>
+            <div className="text-center">
+                <h1 className="text-3xl font-black">Register Perubahan Akta</h1>
+                <p className="text-muted-foreground mt-2">Menambahkan riwayat akta baru untuk perusahaan yang sudah ada.</p>
             </div>
-        </div>
+
+            {/* 🔍 Search Section */}
+            {!selectedCompany ? (
+                <div className="space-y-4">
+                    <div className="flex gap-2">
+                        <div className="relative flex-grow">
+                           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                           <Input 
+                             placeholder="Cari Nama Perusahaan atau NPWP..." 
+                             className="pl-10 h-11"
+                             value={searchQuery}
+                             onChange={(e) => setSearchQuery(e.target.value)}
+                           />
+                        </div>
+                        <Button onClick={handleSearch} size="lg" className="bg-slate-800">Cari</Button>
+                    </div>
+
+                    <div className="grid gap-2">
+                        {results.map(c => (
+                            <div 
+                                key={c.id_company}
+                                onClick={() => setSelectedCompany(c)}
+                                className="p-4 border rounded-lg hover:bg-slate-50 cursor-pointer flex justify-between items-center group"
+                            >
+                                <div>
+                                    <div className="font-bold group-hover:text-blue-600 transition">{c.type} {c.name_company}</div>
+                                    <div className="text-xs text-muted-foreground">{c.npwp}</div>
+                                </div>
+                                <Building2 className="w-5 h-5 text-slate-300" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex justify-between items-center">
+                    <div>
+                        <span className="text-[10px] font-bold text-green-600 uppercase">Perusahaan Terpilih:</span>
+                        <div className="font-bold text-lg">{selectedCompany.type} {selectedCompany.name_company}</div>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedCompany(null)}>Ganti Perusahaan</Button>
+                </div>
+            )}
+
+            <form className={`space-y-8 ${!selectedCompany ? 'opacity-30 pointer-events-none' : ''}`}>
+                <AktaFields isPendirian={false} />
+                <Button className="w-full h-14 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-xl shadow-green-100">
+                    SIMPAN PERUBAHAN AKTA
+                </Button>
+            </form>
+        </Card>
     );
 }
 
 // --- ROUTE DEFINITION ---
+
 export const Route = createFileRoute('/dashboard/add')({
-    component: RouteComponent,
+    component: SelectorAddPage,
 });
 
-function RouteComponent() {
-    return <SelectorAdd />
-}
-
-// --- MAIN SELECTION COMPONENT ---
-export function SelectorAdd() {
-    // State untuk mengontrol tampilan: null (layar pilihan), 'NEW', atau 'EXISTING'
+function SelectorAddPage() {
     const [mode, setMode] = useState<'NEW' | 'EXISTING' | null>(null);
 
-    // Fungsi untuk kembali ke layar pilihan awal
-    const handleBack = () => setMode(null);
+    if (mode === 'NEW') return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><NewCompanyForm onBack={() => setMode(null)} /></div>;
+    if (mode === 'EXISTING') return <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6"><ExistingCompanyAktaForm onBack={() => setMode(null)} /></div>;
 
-    let content;
-    
-    if (mode === 'NEW') {
-        // Tampilkan form Akta Pendirian Perusahaan Baru
-        content = <NewCompanyAndAktaForm onBack={handleBack} />;
-    } else if (mode === 'EXISTING') {
-        // Tampilkan form Akta Perubahan Perusahaan Eksisting
-        content = <NewAktaForExistingCompanyForm onBack={handleBack} />;
-    } else {
-        // Tampilkan tombol pilihan awal (SelectorAdd original)
-        content = (
-            <div className="flex w-full max-w-lg flex-col gap-6 p-8 rounded-xl bg-card text-card-foreground shadow-2xl border border-border">
-                <h1 className="text-2xl font-bold text-center">Pilih Tipe Penambahan Akta</h1>
+    return (
+        <div className="min-h-[calc(100vh-80px)] w-full flex items-center justify-center p-6">
+            <Card className="flex w-full max-w-xl flex-col gap-8 p-10 shadow-2xl border-t-8 border-t-blue-600 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center space-y-2">
+                    <h1 className="text-3xl font-black tracking-tight">Pilih Tipe Penambahan</h1>
+                    <p className="text-muted-foreground italic">Pilih jenis registrasi dokumen yang ingin Anda lakukan hari ini.</p>
+                </div>
                 
-                <div className="space-y-4">
+                <div className="grid gap-4">
                     <Button 
                         onClick={() => setMode('NEW')} 
-                        className="w-full h-14 text-xl font-bold bg-blue-600 hover:bg-blue-700"
+                        className="w-full h-20 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 group"
                     >
-                        + TAMBAH PERUSAHAAN BARU
+                        <PlusCircle className="mr-3 w-6 h-6 group-hover:scale-110 transition" />
+                        PERUSAHAAN BARU
                     </Button>
                     
                     <Button 
                         onClick={() => setMode('EXISTING')} 
-                        className="w-full h-14 text-xl font-bold border-2 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/70"
+                        className="w-full h-20 text-xl font-black border-2 border-green-500 text-green-600 hover:bg-green-50 shadow-lg shadow-green-50"
                         variant="outline"
                     >
-                        + TAMBAH AKTA PERUBAHAN
+                        <CheckCircle2 className="mr-3 w-6 h-6 group-hover:scale-110 transition" />
+                        PERUBAHAN AKTA
                     </Button>
                 </div>
                 
-                <p className="text-center text-sm text-muted-foreground mt-4">
-                    **Akta Baru:** Untuk mencatat pendirian Perusahaan yang benar-benar baru. <br/>
-                    **Akta Perubahan:** Untuk merevisi/mengubah data Akta dari Perusahaan yang sudah ada.
-                </p>
-            </div>
-        );
-    }
-
-    return (
-        // Wrapper container disesuaikan agar konten selalu di tengah
-        <div className="flex min-h-[calc(100vh-60px)] w-full items-center justify-center p-6 md:p-10">
-            {content}
+                <div className="bg-slate-50 p-4 rounded-lg border border-dashed border-slate-300">
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                        <strong className="text-blue-600">Perusahaan Baru:</strong> Digunakan jika badan hukum belum terdaftar sama sekali di database sistem. Form akan meminta data profil dasar dan akta pendirian sekaligus.
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-slate-500 mt-2">
+                        <strong className="text-green-600">Perubahan Akta:</strong> Digunakan untuk menambahkan riwayat (versi) akta baru pada perusahaan yang datanya sudah ada di sistem.
+                    </p>
+                </div>
+            </Card>
         </div>
     );
 }
