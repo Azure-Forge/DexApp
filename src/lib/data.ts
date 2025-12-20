@@ -151,3 +151,29 @@ export async function createCompanyEntry(newEntry: Omit<CompanyEntry, 'id_compan
   DUMMY_DATA.unshift(entry); // Add to the beginning of list
   return entry;
 }
+
+// lib/data.ts - Add these functions
+
+export async function updateCompanyMetadata(id_company: string, updates: Partial<CompanyEntry>) {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  const index = DUMMY_DATA.findIndex(c => c.id_company === id_company);
+  if (index !== -1) {
+    DUMMY_DATA[index] = { ...DUMMY_DATA[index], ...updates };
+  }
+  return DUMMY_DATA[index];
+}
+
+export async function addAktaToHistory(id_company: string, newAkta: Omit<Akta, 'id_akta'>) {
+  await new Promise(resolve => setTimeout(resolve, 400));
+  const company = DUMMY_DATA.find(c => c.id_company === id_company);
+  if (company) {
+    const aktaWithId: Akta = {
+      id_akta: `akta-${id_company}-${Date.now()}`,
+      ...newAkta
+    };
+    // Add to the top of the history
+    company.akta_history.unshift(aktaWithId);
+    return aktaWithId;
+  }
+  return null;
+}
