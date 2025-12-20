@@ -12,6 +12,7 @@ export type Akta = {
   notary_name: string;
   pdf_link: string;   
   excel_link: string; 
+  keterangan: string;
 };
 
 export interface CompanyEntry {
@@ -31,6 +32,13 @@ export interface CompanyEntry {
 const NOTARIES = ["Budi Santoso, S.H.", "Siti Aminah, S.H., M.Kn.", "Andi Wijaya, S.H.", "Dewi Sartika, S.H.", "Hendra Yusuf, S.H."];
 const CITIES = ["Jakarta Selatan", "Surabaya", "Bandung", "Medan", "Semarang", "Tangerang", "Bekasi"];
 const COMPANY_NAMES = ["Maju Bersama", "Sinergi Tech", "Nusantara Jaya", "Global Solusi", "Lestari Abadi", "Karya Mandiri", "Pilar Utama"];
+const NOTES = [
+  "Perubahan susunan Direksi dan Komisaris.",
+  "Peningkatan modal ditempatkan dan modal disetor.",
+  "Perubahan alamat kedudukan perusahaan.",
+  "Penyesuaian Anggaran Dasar dengan UU No. 40 Tahun 2007.",
+  "Akta pendirian awal perusahaan dengan modal dasar Rp 1.000.000.000."
+];
 
 const getRandom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
 
@@ -58,7 +66,8 @@ function generateDummyHistory(companyId: number): Akta[] {
       akta_date: new Date(year, month, day).toISOString(),
       notary_name: getRandom(NOTARIES),
       pdf_link: "https://drive.google.com/sample-pdf",
-      excel_link: "https://docs.google.com/sample-excel"
+      excel_link: "https://docs.google.com/sample-excel",
+      keterangan: getRandom(NOTES) // 📝 Random Lorem/Notes
     });
   }
 

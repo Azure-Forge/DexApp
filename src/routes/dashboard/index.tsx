@@ -29,7 +29,7 @@ function AddEntriesCard() {
     return (
         <Link to = "/dashboard/add">
         <a  className="block h-full"> 
-            <Card className="relative p-5 rounded-xl border border-dashed border-neutral-400 min-h-[200px] shadow-sm hover:shadow-md transition flex flex-col justify-center items-center group">
+            <Card className="relative p-5 rounded-xl border border-dashed border-neutral-400 min-h-[215px] shadow-sm hover:shadow-md transition flex flex-col justify-center items-center group">
                 <PlusCircle className="w-10 h-10 text-neutral-400 group-hover:text-blue-500 transition"/>
                 <span className="bold font-medium text-center mt-3 text-neutral-500 group-hover:text-blue-500 transition">
                      TAMBAH BARU
