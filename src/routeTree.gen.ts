@@ -16,7 +16,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as LoginOtpRouteImport } from './routes/login/otp'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoPingserverRouteImport } from './routes/demo/pingserver'
-import { Route as DashboardWorkplaceRouteImport } from './routes/dashboard/workplace'
+import { Route as DashboardAdminpanelRouteImport } from './routes/dashboard/adminpanel'
 import { Route as DashboardAddRouteImport } from './routes/dashboard/add'
 import { Route as DashboardAktaCompanyIdRouteImport } from './routes/dashboard/akta/$companyId'
 
@@ -55,9 +55,9 @@ const DemoPingserverRoute = DemoPingserverRouteImport.update({
   path: '/demo/pingserver',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardWorkplaceRoute = DashboardWorkplaceRouteImport.update({
-  id: '/dashboard/workplace',
-  path: '/dashboard/workplace',
+const DashboardAdminpanelRoute = DashboardAdminpanelRouteImport.update({
+  id: '/dashboard/adminpanel',
+  path: '/dashboard/adminpanel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardAddRoute = DashboardAddRouteImport.update({
@@ -74,7 +74,7 @@ const DashboardAktaCompanyIdRoute = DashboardAktaCompanyIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard/add': typeof DashboardAddRoute
-  '/dashboard/workplace': typeof DashboardWorkplaceRoute
+  '/dashboard/adminpanel': typeof DashboardAdminpanelRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
@@ -86,7 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/add': typeof DashboardAddRoute
-  '/dashboard/workplace': typeof DashboardWorkplaceRoute
+  '/dashboard/adminpanel': typeof DashboardAdminpanelRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
@@ -99,7 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard/add': typeof DashboardAddRoute
-  '/dashboard/workplace': typeof DashboardWorkplaceRoute
+  '/dashboard/adminpanel': typeof DashboardAdminpanelRoute
   '/demo/pingserver': typeof DemoPingserverRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/login/otp': typeof LoginOtpRoute
@@ -113,7 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard/add'
-    | '/dashboard/workplace'
+    | '/dashboard/adminpanel'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
@@ -125,7 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard/add'
-    | '/dashboard/workplace'
+    | '/dashboard/adminpanel'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
@@ -137,7 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard/add'
-    | '/dashboard/workplace'
+    | '/dashboard/adminpanel'
     | '/demo/pingserver'
     | '/demo/tanstack-query'
     | '/login/otp'
@@ -150,7 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardAddRoute: typeof DashboardAddRoute
-  DashboardWorkplaceRoute: typeof DashboardWorkplaceRoute
+  DashboardAdminpanelRoute: typeof DashboardAdminpanelRoute
   DemoPingserverRoute: typeof DemoPingserverRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   LoginOtpRoute: typeof LoginOtpRoute
@@ -211,11 +211,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoPingserverRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/workplace': {
-      id: '/dashboard/workplace'
-      path: '/dashboard/workplace'
-      fullPath: '/dashboard/workplace'
-      preLoaderRoute: typeof DashboardWorkplaceRouteImport
+    '/dashboard/adminpanel': {
+      id: '/dashboard/adminpanel'
+      path: '/dashboard/adminpanel'
+      fullPath: '/dashboard/adminpanel'
+      preLoaderRoute: typeof DashboardAdminpanelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/add': {
@@ -238,7 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardAddRoute: DashboardAddRoute,
-  DashboardWorkplaceRoute: DashboardWorkplaceRoute,
+  DashboardAdminpanelRoute: DashboardAdminpanelRoute,
   DemoPingserverRoute: DemoPingserverRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   LoginOtpRoute: LoginOtpRoute,

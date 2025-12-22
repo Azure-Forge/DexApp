@@ -1,5 +1,7 @@
 // lib/data.ts
 
+import { supabase } from "@/supabase-client";
+
 export type CompanyType = "PT" | "CV" | "FIRMA" | "YAYASAN";
 export type NPWPStatus = "AKTIF" | "NON_EFEKTIF";
 export type ClientStatus = "AKTIF" | "NON_AKTIF";
@@ -97,11 +99,8 @@ const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 50 }, (_, i) => {
     akta_history: generateDummyHistory(idNum),
   };
 });
-
-// --- EXPORTED FUNCTIONS ---
-
 /**
- * Enhanced fetch with Advanced Filtering
+ * Fetch List with Joins and Filters
  */
 export async function fetchCompanyEntries(
   page: number, 
@@ -112,68 +111,146 @@ export async function fetchCompanyEntries(
   statusNPWP: NPWPStatus | "ALL" = "ALL",
   taxStatus: TaxStatus | "ALL" = "ALL"
 ): Promise<CompanyEntry[]> {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // 1. Start query selecting company AND its related akta
+  // we use order on akta to ensure newest is first in history
+  let query = supabase
+    .from('companies')
+    .select(`
+      *,
+      akta_history: akta (*)
+    `)
+    .order('created_at', { ascending: false })
+    .order('akta_date', { foreignTable: 'akta', ascending: false });
 
-  let filtered = [...DUMMY_DATA];
+  // 2. Apply Filters
+  if (companyType !== "ALL") query = query.eq('type', companyType);
+  if (statusKlien !== "ALL") query = query.eq('status_klien', statusKlien);
+  if (statusNPWP !== "ALL") query = query.eq('status_npwp', statusNPWP);
+  if (taxStatus !== "ALL") query = query.eq('is_pkp', taxStatus);
 
-  // 1. Filter by Types and Statuses
-  if (companyType !== "ALL") filtered = filtered.filter(c => c.type === companyType);
-  if (statusKlien !== "ALL") filtered = filtered.filter(c => c.status_klien === statusKlien);
-  if (statusNPWP !== "ALL") filtered = filtered.filter(c => c.status_npwp === statusNPWP);
-  if (taxStatus !== "ALL") filtered = filtered.filter(c => c.is_pkp === taxStatus);
-
-  // 2. Filter by Search Term (Name or NPWP)
   if (searchTerm) {
-    const s = searchTerm.toLowerCase();
-    filtered = filtered.filter(c => 
-      c.name_company.toLowerCase().includes(s) || 
-      c.npwp.includes(s)
-    );
+    query = query.or(`name_company.ilike.%${searchTerm}%,npwp.ilike.%${searchTerm}%`);
   }
 
-  // 3. Apply Pagination
+  // 3. Pagination
   const from = page * pageSize;
-  const to = from + pageSize;
-  return filtered.slice(from, to);
+  const to = from + pageSize - 1;
+  const { data, error } = await query.range(from, to);
+
+  if (error) throw error;
+
+  // Map Supabase 'id' to your UI's 'id_company' for compatibility
+  return (data as any[]).map(row => ({
+    ...row,
+    id_company: row.id,
+    akta_history: row.akta_history.map((a: any) => ({ ...a, id_akta: a.id }))
+  }));
 }
 
+/**
+ * Fetch Single Company Detail
+ */
 export async function fetchCompanyById(id_company: string): Promise<CompanyEntry | null> {
-  await new Promise(resolve => setTimeout(resolve, 150));
-  const found = DUMMY_DATA.find(c => c.id_company === id_company);
-  return found ?? null;
+  const { data, error } = await supabase
+    .from('companies')
+    .select(`*, akta_history: akta (*)`)
+    .eq('id', id_company)
+    .order('akta_date', { foreignTable: 'akta', ascending: false })
+    .single();
+
+  if (error) return null;
+  return { ...data, id_company: data.id, akta_history: data.akta_history.map((a: any) => ({ ...a, id_akta: a.id })) };
 }
 
-export async function createCompanyEntry(newEntry: Omit<CompanyEntry, 'id_company'>) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const id = `comp-${DUMMY_DATA.length + 1}`;
-  const entry: CompanyEntry = { id_company: id, ...newEntry };
-  DUMMY_DATA.unshift(entry); // Add to the beginning of list
-  return entry;
-}
-
-// lib/data.ts - Add these functions
-
+/**
+ * Update Metadata
+ */
 export async function updateCompanyMetadata(id_company: string, updates: Partial<CompanyEntry>) {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  const index = DUMMY_DATA.findIndex(c => c.id_company === id_company);
-  if (index !== -1) {
-    DUMMY_DATA[index] = { ...DUMMY_DATA[index], ...updates };
-  }
-  return DUMMY_DATA[index];
+  const { data, error } = await supabase
+    .from('companies')
+    .update(updates)
+    .eq('id', id_company)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
+/**
+ * Add New Akta to existing Company
+ */
 export async function addAktaToHistory(id_company: string, newAkta: Omit<Akta, 'id_akta'>) {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  const company = DUMMY_DATA.find(c => c.id_company === id_company);
-  if (company) {
-    const aktaWithId: Akta = {
-      id_akta: `akta-${id_company}-${Date.now()}`,
-      ...newAkta
-    };
-    // Add to the top of the history
-    company.akta_history.unshift(aktaWithId);
-    return aktaWithId;
-  }
-  return null;
+  const { data, error } = await supabase
+    .from('akta')
+    .insert([{ company_id: id_company, ...newAkta }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Register NEW Company with Founding Akta (Atomic)
+ * This handles the two-step Supabase insertion process.
+ */
+export async function createCompanyWithInitialAkta(
+  companyData: Omit<CompanyEntry, 'id_company' | 'akta_history'>,
+  initialAkta: Omit<Akta, 'id_akta'>
+) {
+  // 1. Insert Company Metadata
+  const { data: company, error: compError } = await supabase
+    .from('companies')
+    .insert([
+      {
+        name_company: companyData.name_company,
+        npwp: companyData.npwp,
+        type: companyData.type,
+        current_domicile: companyData.current_domicile,
+        status_npwp: companyData.status_npwp,
+        status_klien: companyData.status_klien,
+        is_pkp: companyData.is_pkp,
+      },
+    ])
+    .select()
+    .single();
+
+  if (compError) throw compError;
+
+  // 2. Insert the initial Akta record using the new Company ID
+  const { error: aktaError } = await supabase
+    .from('akta')
+    .insert([
+      {
+        company_id: company.id, // Use the UUID returned from the first insert
+        akta_title: initialAkta.akta_title,
+        akta_date: initialAkta.akta_date,
+        notary_name: initialAkta.notary_name,
+        pdf_link: initialAkta.pdf_link,
+        excel_link: initialAkta.excel_link,
+        keterangan: initialAkta.keterangan,
+      },
+    ]);
+
+  if (aktaError) throw aktaError;
+
+  return company;
+}
+
+// lib/data.ts - Add this function
+
+/**
+ * Permanently Delete Company and all associated Akta
+ * Note: SQL "ON DELETE CASCADE" handles the akta cleanup.
+ */
+export async function deleteCompany(id_company: string) {
+  const { error } = await supabase
+    .from('companies')
+    .delete()
+    .eq('id', id_company);
+
+  if (error) throw error;
+  return true;
 }

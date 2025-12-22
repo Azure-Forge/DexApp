@@ -2,7 +2,8 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   PlusCircle, Search, FilterX, Building2, 
-  FileText, Table, ShieldCheck, UserCheck, Activity 
+  FileText, ShieldCheck, UserCheck, Activity,
+  RefreshCw
 } from 'lucide-react'; 
 
 import { 
@@ -36,13 +37,13 @@ function EntryCard({ entry }: { entry: CompanyEntry }) {
   return (
     <Link to="/dashboard/akta/$companyId" params={{ companyId: entry.id_company }}>
       <Card className="group relative p-5 rounded-xl border min-h-[220px] shadow-sm flex flex-col justify-between hover:shadow-xl transition-all hover:-translate-y-1 cursor-pointer overflow-hidden">
-        {/* Accent Bar */}
         <div className={`absolute top-0 left-0 w-full h-1 ${entry.status_klien === 'AKTIF' ? 'bg-green-500' : 'bg-red-500'}`} />
 
         <div>
           <div className="flex justify-between items-start mb-3">
+            {/* 🛑 Updated: NPWP now formats to 0000.0000.0000.0000 */}
             <Badge variant="outline" className="font-mono text-[10px] tracking-tighter opacity-70">
-              {entry.npwp}
+              {entry.npwp.replace(/(\d{4})(?=\d)/g, "$1.")}
             </Badge>
             <Badge className={entry.is_pkp === 'PKP' ? 'bg-blue-600' : 'bg-slate-400'}>
               {entry.is_pkp}
@@ -88,9 +89,8 @@ function EntryCard({ entry }: { entry: CompanyEntry }) {
 
 export function Page() {
   const [entries, setEntries] = useState<CompanyEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); 
   
-  // States for all filters
   const [searchTerm, setSearchTerm] = useState("");
   const [localSearch, setLocalSearch] = useState("");
   const [type, setType] = useState<CompanyType | "ALL">("ALL");
@@ -103,15 +103,24 @@ export function Page() {
     try {
       const data = await fetchCompanyEntries(0, 24, type, searchTerm, klienStatus, npwpStatus, taxStatus);
       setEntries(data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) { 
+      console.error("Supabase Fetch Error:", e); 
+    } finally { 
+      setLoading(false); 
+    }
   }, [type, searchTerm, klienStatus, npwpStatus, taxStatus]);
 
-  useEffect(() => { loadEntries(); }, [loadEntries]);
+  useEffect(() => { 
+    loadEntries(); 
+  }, [loadEntries]);
 
   const resetFilters = () => {
-    setLocalSearch(""); setSearchTerm("");
-    setType("ALL"); setKlienStatus("ALL"); setNpwpStatus("ALL"); setTaxStatus("ALL");
+    setLocalSearch(""); 
+    setSearchTerm("");
+    setType("ALL"); 
+    setKlienStatus("ALL"); 
+    setNpwpStatus("ALL"); 
+    setTaxStatus("ALL");
   };
 
   return (
@@ -121,17 +130,20 @@ export function Page() {
           <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
             <Building2 className="w-8 h-8 text-blue-600" /> Dashboard Perusahaan
           </h1>
-          <p className="text-muted-foreground text-sm">Kelola legalitas dan database perusahaan klien anda.</p>
+          <p className="text-muted-foreground text-sm font-medium">Database legalitas dan klien aktif.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={resetFilters} className="text-red-500 border-red-200 hover:bg-red-50">
-          <FilterX className="w-4 h-4 mr-2" /> Reset Filter
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={loadEntries} disabled={loading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Sinkron
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetFilters} className="text-red-500 border-red-200 hover:bg-red-50">
+                <FilterX className="w-4 h-4 mr-2" /> Reset
+            </Button>
+        </div>
       </div>
 
-      {/* --- ADVANCED FILTER BAR --- */}
       <Card className="p-4 shadow-sm border-none bg-white/80 backdrop-blur-md sticky top-4 z-20 flex flex-col gap-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search */}
           <form className="lg:col-span-2 relative" onSubmit={(e) => { e.preventDefault(); setSearchTerm(localSearch); }}>
             <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
             <Input 
@@ -142,7 +154,6 @@ export function Page() {
             />
           </form>
 
-          {/* Type Filter */}
           <Select value={type} onValueChange={(v) => setType(v as any)}>
             <SelectTrigger><SelectValue placeholder="Jenis Badan" /></SelectTrigger>
             <SelectContent>
@@ -154,17 +165,15 @@ export function Page() {
             </SelectContent>
           </Select>
 
-          {/* Client Status Filter */}
           <Select value={klienStatus} onValueChange={(v) => setKlienStatus(v as any)}>
             <SelectTrigger><SelectValue placeholder="Status Klien" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Status Klien</SelectItem>
+              <SelectItem value="ALL">Semua Klien</SelectItem>
               <SelectItem value="AKTIF">KLIEN AKTIF</SelectItem>
               <SelectItem value="NON_AKTIF">NON-AKTIF</SelectItem>
             </SelectContent>
           </Select>
 
-          {/* Tax Status Filter */}
           <Select value={taxStatus} onValueChange={(v) => setTaxStatus(v as any)}>
             <SelectTrigger><SelectValue placeholder="Status Pajak" /></SelectTrigger>
             <SelectContent>
@@ -176,18 +185,17 @@ export function Page() {
         </div>
       </Card>
 
-      {/* --- GRID CONTAINER --- */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-           <Activity className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-           <p className="font-bold text-slate-400">Menyinkronkan Data...</p>
+      {loading && entries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-32">
+           <Activity className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+           <p className="font-bold text-slate-400 animate-pulse">Menghubungkan ke Supabase...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           <Link to="/dashboard/add">
             <Card className="relative p-5 rounded-xl border-2 border-dashed border-slate-300 min-h-[220px] flex flex-col justify-center items-center group hover:border-blue-500 hover:bg-blue-50/50 transition-all cursor-pointer">
               <PlusCircle className="w-12 h-12 text-slate-300 group-hover:text-blue-500 transition-all group-hover:scale-110" />
-              <span className="font-black text-center mt-4 text-slate-400 group-hover:text-blue-600">TAMBAH PERUSAHAAN</span>
+              <span className="font-black text-center mt-4 text-slate-400 group-hover:text-blue-600 uppercase tracking-tighter">Tambah Badan Hukum</span>
             </Card>
           </Link>
 
@@ -197,8 +205,8 @@ export function Page() {
 
       {!loading && entries.length === 0 && (
         <div className="text-center py-20 bg-white rounded-2xl border border-dashed">
-          <p className="text-xl font-bold text-slate-400">Data Tidak Ditemukan</p>
-          <Button variant="link" onClick={resetFilters}>Bersihkan semua filter</Button>
+          <p className="text-xl font-bold text-slate-400">Database Kosong atau Tidak Ditemukan</p>
+          <Button variant="link" onClick={resetFilters}>Reset semua pencarian</Button>
         </div>
       )}
     </div>
