@@ -1,6 +1,6 @@
 // routes/dashboard/adminpanel.tsx
 import { useState, useEffect, useCallback } from 'react'
-import { createFileRoute, useRouter } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { 
   fetchCompanyEntries, 
   deleteCompany, 
@@ -32,7 +32,7 @@ export const Route = createFileRoute('/dashboard/adminpanel')({
 })
 
 export function Page() {
-  const router = useRouter();
+  //const router = useRouter();
   const [entries, setEntries] = useState<CompanyEntry[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);

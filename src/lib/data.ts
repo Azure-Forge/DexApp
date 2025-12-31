@@ -99,6 +99,11 @@ const DUMMY_DATA: CompanyEntry[] = Array.from({ length: 50 }, (_, i) => {
     akta_history: generateDummyHistory(idNum),
   };
 });
+
+//make dummy data read value
+DUMMY_DATA.length;
+
+
 /**
  * Fetch List with Joins and Filters
  */

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
 import { 
   PlusCircle, 
   ArrowLeft, 
@@ -311,7 +311,7 @@ function ExistingCompanyAktaForm({ onBack }: { onBack: () => void }) {
             {!selectedCompany ? (
                 <div className="space-y-4">
                     <div className="flex gap-2">
-                        <div className="relative flex-grow">
+                        <div className="relative flex grow">
                            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
                            <Input 
                              placeholder="Cari Nama Perusahaan atau NPWP..." 

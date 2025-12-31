@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   PlusCircle, Search, FilterX, Building2, 
   FileText, ShieldCheck, UserCheck, Activity,

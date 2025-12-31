@@ -4,7 +4,7 @@ import {
   updateCompanyMetadata, 
   addAktaToHistory, 
   type CompanyEntry, 
-  type Akta,
+  //type Akta,
   type NPWPStatus,
   type ClientStatus,
   type TaxStatus
@@ -29,7 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert" // 🛑 Added Alert
+import { Alert, AlertDescription } from "@/components/ui/alert" // 🛑 Added Alert
 import { 
   ArrowLeft, FileText, Table as TableIcon, 
   CheckCircle2, XCircle, MapPin, AlertCircle, 
