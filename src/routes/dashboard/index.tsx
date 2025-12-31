@@ -69,7 +69,7 @@ function EntryCard({ entry }: { entry: CompanyEntry }) {
         </div>
 
         <div className="mt-6 pt-3 border-t border-dashed">
-          <div className="text-[11px] font-bold text-slate-700 truncate mb-2 flex items-center gap-1">
+          <div className="text-[11px] font-bold text-slate-700 truncate flex items-center gap-1">
             <FileText className="w-3 h-3 text-blue-500" /> {latestAkta?.akta_title ?? "Belum ada Akta"}
           </div>
           <div className="flex justify-between items-center">

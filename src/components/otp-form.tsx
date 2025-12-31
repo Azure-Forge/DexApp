@@ -58,7 +58,7 @@ export function OTPForm({ email, ...props }: OTPFormProps) {
       console.log('OTP verification successful! Logged in.')
 
       // Redirect to a protected route on successful login
-      navigate({ to: '/demo/pingserver' })
+      navigate({ to: '/dashboard' })
 
     } catch (err) {
       setErrorMessage('Invalid or expired code. Please try again.')

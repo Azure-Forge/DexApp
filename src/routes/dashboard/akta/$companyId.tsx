@@ -29,6 +29,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert" // 🛑 Added Alert
 import { 
   ArrowLeft, FileText, Table as TableIcon, 
   CheckCircle2, XCircle, MapPin, AlertCircle, 
@@ -45,19 +46,53 @@ export const Route = createFileRoute('/dashboard/akta/$companyId')({
   component: CompanyDetailComponent,
 })
 
+// --- HELPER: FORMATTED NPWP INPUT ---
+function NPWPInput({ name, defaultValue, required }: { name: string, defaultValue?: string, required?: boolean }) {
+  // Format the incoming raw string from DB for display
+  const initialValue = defaultValue ? defaultValue.replace(/(\d{4})(?=\d)/g, "$1.") : "";
+  const [value, setValue] = useState(initialValue);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/\D/g, "");
+    if (raw.length > 16) raw = raw.slice(0, 16);
+    const formatted = raw.replace(/(\d{4})(?=\d)/g, "$1.");
+    setValue(formatted);
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[10px] font-black uppercase text-slate-500">NPWP (16 Digit)</label>
+      <Input 
+        name={name}
+        value={value}
+        onChange={handleChange}
+        placeholder="0000.0000.0000.0000"
+        className="font-mono tracking-widest"
+        required={required}
+      />
+    </div>
+  );
+}
+
 // --- SUB-COMPONENT: EDIT DIALOG (SUPABASE) ---
 function EditCompanyDialog({ company }: { company: CompanyEntry }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null); // 🛑 Error state
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const fd = new FormData(e.currentTarget);
     
+    // Clean NPWP before sending to DB
+    const rawNpwp = (fd.get('npwp') as string).replace(/\./g, "");
+
     const updates = {
       name_company: fd.get('name') as string,
+      npwp: rawNpwp,
       current_domicile: fd.get('domicile') as string,
       status_klien: fd.get('status_klien') as ClientStatus,
       status_npwp: fd.get('status_npwp') as NPWPStatus,
@@ -67,9 +102,13 @@ function EditCompanyDialog({ company }: { company: CompanyEntry }) {
     try {
       await updateCompanyMetadata(company.id_company, updates);
       setOpen(false);
-      router.invalidate(); // Re-runs the loader to show fresh DB data
-    } catch (err) {
-      alert("Gagal memperbarui data perusahaan.");
+      router.invalidate();
+    } catch (err: any) {
+      if (err.code === '23505') {
+        setError("NPWP ini sudah digunakan oleh perusahaan lain.");
+      } else {
+        setError("Gagal memperbarui data.");
+      }
     } finally {
       setLoading(false);
     }
@@ -86,12 +125,23 @@ function EditCompanyDialog({ company }: { company: CompanyEntry }) {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Profil Perusahaan</DialogTitle>
-            <DialogDescription>Sesuaikan status legalitas dan informasi dasar.</DialogDescription>
+            <DialogDescription>Perbarui status legalitas dan informasi dasar badan hukum.</DialogDescription>
           </DialogHeader>
+
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid gap-4 py-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase text-slate-500">Nama Perusahaan</label>
-              <Input name="name" defaultValue={company.name_company} required />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-500">Nama Perusahaan</label>
+                <Input name="name" defaultValue={company.name_company} required />
+              </div>
+              <NPWPInput name="npwp" defaultValue={company.npwp} required />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -145,7 +195,7 @@ function EditCompanyDialog({ company }: { company: CompanyEntry }) {
   );
 }
 
-// --- SUB-COMPONENT: REGISTER AKTA DIALOG (SUPABASE) ---
+// --- SUB-COMPONENT: REGISTER AKTA DIALOG ---
 function RegisterAktaDialog({ companyId }: { companyId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -187,7 +237,7 @@ function RegisterAktaDialog({ companyId }: { companyId: string }) {
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Register Akta Perubahan</DialogTitle>
-            <DialogDescription>Tambahkan dokumen legalitas terbaru untuk perusahaan ini.</DialogDescription>
+            <DialogDescription>Tambahkan dokumen legalitas terbaru ke riwayat perusahaan.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-6">
             <div className="grid grid-cols-2 gap-4">
@@ -237,7 +287,7 @@ function CompanyDetailComponent() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-      {/* 1. HEADER SECTION */}
+      {/* 1. HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
         <div className="flex items-center gap-4">
           <Link to="/dashboard">
@@ -252,7 +302,10 @@ function CompanyDetailComponent() {
                  {company.is_pkp}
                </Badge>
             </div>
-            <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">NPWP: {company.npwp}</p>
+            {/* 🛑 Updated NPWP Display Format */}
+            <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest">
+              NPWP: {company.npwp.replace(/(\d{4})(?=\d)/g, "$1.")}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -261,7 +314,7 @@ function CompanyDetailComponent() {
         </div>
       </div>
 
-      {/* 2. INFORMASI PERUSAHAAN GRID */}
+      {/* 2. INFO CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-5 space-y-4 shadow-sm border-t-4 border-t-blue-500">
           <div className="flex items-center gap-2 text-muted-foreground text-[10px] font-black uppercase tracking-widest">
@@ -292,7 +345,7 @@ function CompanyDetailComponent() {
         </Card>
       </div>
 
-      {/* 3. AKTA HISTORY SECTION */}
+      {/* 3. RIWAYAT AKTA */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-black tracking-tight flex items-center gap-2">

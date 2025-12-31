@@ -20,4 +20,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    port: 3000,
+    host: '0.0.0.0', 
+    strictPort: true,
+    allowedHosts: ['.ngrok-free.dev'],
+    hmr: {
+      protocol: 'wss', 
+      host: 'unstreamed-unnutritive-wesley.ngrok-free.dev',
+      // 🛑 REMOVED 'port: 443' to prevent local binding errors
+      // ✅ KEPT 'clientPort: 443' so the phone browser knows to use HTTPS
+      clientPort: 443 
+    },
+  },
 })
